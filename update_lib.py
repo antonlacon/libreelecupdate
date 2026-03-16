@@ -59,12 +59,8 @@ class UpdateSystem():
 
     @staticmethod
     def get_highest_value(values):
-        '''Review list of integers (that are internally strings, like releases) and return highest as string.'''
-        highest_value = 0 # releases start at 0
-        for value in values:
-            value = int(value)
-            highest_value = max(value, highest_value)
-        return str(highest_value)
+        '''Return highest value in list of integers (that are internally strings, like releases) as string.'''
+        return str(max(map(int, values))) if values else '0'
 
 
     def parse_osrelease(self):
