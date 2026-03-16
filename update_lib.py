@@ -65,28 +65,40 @@ class UpdateSystem():
 
     def parse_osrelease(self):
         '''Read /etc/os-release and set corresponding variables.'''
-        with open('/etc/os-release', mode='r', encoding='utf-8') as data:
-            content = data.read()
-        for line in content.splitlines():
-            if line.startswith('DISTRO_ARCH='):
-                self.current['architecture'] = line.partition('=')[2].strip('\"')
-            elif line.startswith('NAME='):
-                self.current['distribution'] = line.partition('=')[2].strip('\"')
-            elif line.startswith('VERSION='):
-                self.current['version'] = line.partition('=')[2].strip('\"')
-            elif line.startswith('VERSION_ID='):
-                self.current['version_id'] = line.partition('=')[2].strip('\"')
-            if self.current['architecture'] and self.current['distribution'] and self.current['version'] and self.current['version_id']:
-                break
+        data = {}
+        with open('/etc/os-release', mode='r', encoding='utf-8') as contents:
+            for line in contents:
+                line = line.strip()
+                if not line or '=' not in line:
+                    continue
+                key, _, val = line.partition('=')
+                val = val.strip().strip('"')
+                data[key] = val
+                if 'DISTRO_ARCH' in data and 'NAME' in data and 'VERSION' in data and 'VERSION_ID' in data:
+                    break
+        self.current['architecture'] = data.get('DISTRO_ARCH')
+        self.current['distribution'] = data.get('NAME')
+        self.current['version'] = data.get('VERSION')
+        self.current['version_id'] = data.get('VERSION_ID')
         # If debugging other devices, change self.current[architecture, distribution, version, version_id] here
-        self.current['version_major'], self.current['version_minor'] = [int(i) for i in self.current['version_id'].split('.')]
-        self.current['version_bugfix'] = int(self.current['version'].split('.')[2]) if not self.current['version'].startswith(('devel', 'nightly')) else None
-        if self.current['version'].startswith('nightly'):
-            self.current['timestamp'] = datetime.strptime(self.current['version'].split('-')[1], '%Y%m%d')
-        elif self.current['version'].startswith('devel'):
-            self.current['timestamp'] = datetime.strptime(self.current['version'].split('-')[1], '%Y%m%d%H%M%S')
-        else:
+        # parse version info
+        try:
+            vm = [int(i) for i in (self.current['version_id'] or '0.0').split('.')]
+            self.current['version_major'], self.current['version_minor'] = vm[0], vm[1]
+        except Exception:
+            self.current['version_major'] = self.current['version_minor'] = 0
+        ver = self.current.get('version', '')
+        self.current['version_bugfix'] = int(ver.split('.')[2]) if not ver.startswith(('devel', 'nightly')) else None
+        # parse timestamp info
+        try:
+            if ver.startswith('nightly'):
+                self.current['timestamp'] = datetime.strptime(ver.split('-')[1], '%Y%m%d')
+            elif ver.startswith('devel'):
+                self.current['timestamp'] = datetime.strptime(ver.split('-')[1], '%Y%m%d%H%M%S')
             # TODO only place available is stable releases.json. this is only used when we're downloading the test json instead. Timestamp of a file on disk available instead?
+            else:
+                self.current['timestamp'] = None
+        except Exception:
             self.current['timestamp'] = None
 
 
