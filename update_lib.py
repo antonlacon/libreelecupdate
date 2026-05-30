@@ -97,7 +97,7 @@ class UpdateSystem():
     def fetch_update_json(self):
         '''Downloads releases.json file and readies for parsing.'''
         try:
-            with urllib.request.urlopen(self.json_url) as data:
+            with urllib.request.urlopen(self.json_url, timeout=10) as data:
                 self.update_json = json.loads(data.read().decode('utf-8').strip()) if data else None
         except urllib.error.HTTPError as err:
             if err.code == 404:
@@ -136,7 +136,7 @@ class UpdateSystem():
 
 
     def abort_update_check(self, msg='abort_update_check() triggered'):
-        '''Reset update result flags to None.'''
+        '''Reset update result flags.'''
         print(msg)
         self.update_available = False
         self.update_major = False
@@ -157,7 +157,7 @@ class UpdateSystem():
         if not self.update_json:
             self.fetch_update_json()
         if not self.update_json:
-            self.abort_update_check('ERROR: Failed to load json release data.')
+            self.abort_update_check('ERROR: No JSON release data.')
             self.abort_check = True
             return
 
