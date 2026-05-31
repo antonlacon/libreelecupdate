@@ -36,6 +36,7 @@ def import_from_file(module_name, file_path):
         print(f'Module already loaded: {module_name}')
     else:
         print(f'File not found: {file_path}')
+        sys.exit(1)
 
 update_lib = import_from_file(module_name='update_lib', file_path='/usr/lib/libreelec/update_lib.py')
 
