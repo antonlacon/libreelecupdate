@@ -14,12 +14,11 @@ import argparse
 import importlib.machinery
 import importlib.util
 import os
-import shutil
 import sys
-import tempfile
 import urllib.request
 
-from hashlib import sha256
+# shutil, tempfile, urllib.error and hashlib/sha256 also imoprted when starting file download
+
 
 def import_from_file(module_name, file_path):
     '''Import python source code module from file path.'''
@@ -41,51 +40,62 @@ def import_from_file(module_name, file_path):
 update_lib = import_from_file(module_name='update_lib', file_path='/usr/lib/libreelec/update_lib.py')
 
 
-def fetch_update_file(url, sha256sum, file_name, update_dir='/storage/.update', verbose=args.verbose):
+def fetch_update_file(url, sha256sum, file_name, update_dir='/storage/.update', verbose=False):
     '''Download update_url to a temporary directory. Copy to update directory when finished.'''
+    import shutil, tempfile, urllib.error
+    from hashlib import sha256
 
-    def get_sha256_hash(file_path):
+    def get_sha256_hash(file_path, buf):
         '''Calculate sha256 sum of file_path.'''
         h = sha256()
-        buf = bytearray(32768)
-
         with open(file_path, mode='rb') as f:
             while True:
-                block = f.readinto(buf)
-                if not block:
+                nbytes = f.readinto(buf)
+                if not nbytes:
                     break
-                h.update(memoryview(buf)[:block])
-
+                h.update(memoryview(buf)[:nbytes])
         return h.hexdigest()
 
-    download_sha256sum = None
-    with tempfile.TemporaryDirectory() as update_temp_dir:
+    buf = bytearray(32768)
+
+    print(f"Starting download: {url}")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        temp_file = os.path.join(tmpdir, 'update.file')
         try:
-            with urllib.request.urlopen(url) as download, open(f'{update_temp_dir}/update.file', mode='wb') as file_in_progress:
-                shutil.copyfileobj(download, file_in_progress)
+            with urllib.request.urlopen(url, timeout=30) as download, open(temp_file, 'wb') as out:
+                while True:
+                    nbytes = download.readinto(buf)
+                    if not nbytes:
+                        break
+                    out.write(buf[:nbytes])
+
+        except urllib.error.HTTPError as e:
+            print(f'HTTP error: {e.code}: {url}')
+            return False
+        except urllib.error.URLError as e:
+            print(f'Network error: {e.reason}')
+            return False
         except Exception as e:
-            print(e)
-            # delete partial download
-            if os.path.isfile(f'{update_temp_dir}/update.file'):
-                print('ERROR: Download failure. Deleting partially downloaded file.')
-                os.remove(f'{update_temp_dir}/update.file')
-        else:
-            print('Download finished.')
-            if os.path.isfile(f'{update_temp_dir}/update.file'):
-                download_sha256sum = get_sha256_hash(f'{update_temp_dir}/update.file')
-                if verbose:
-                    print(f'{sha256sum=}\n{download_sha256sum=}')
-                if sha256sum == download_sha256sum:
-                    print(f'Copying {file_name} to {update_dir}')
-                    shutil.copy2(f'{update_temp_dir}/update.file', f'{update_dir}/{file_name}')
-                else:
-                    print(f'ERROR: sha256 checksum failure.\n  Wanted: {sha256sum}\n  Downloaded: {download_sha256sum}')
-                    print('  Deleting downloaded file.')
-                    os.remove(f'{update_temp_dir}/update.file')
-    if os.path.isfile(f'{update_dir}/{client_update.candidate["filename"]}'):
-        print('Download complete. Reboot to continue the update.')
-    else:
-        print('Download failed. Please try again later.')
+            print(f'Unexpected error: {e}')
+            return False
+
+        if not os.path.isfile(temp_file):
+            print('Download failed: no file created.')
+            return False
+
+        download_checksum = get_sha256_hash(temp_file, buf)
+        if verbose:
+            print(f'Expected: {sha256sum}\nGot: {download_checksum}')
+
+        if sha256sum != download_checksum:
+            print('ERROR: sha256 checksum mismatch. Deleting file.')
+            os.remove(temp_file)
+            return False
+
+        os.makedirs(update_dir, exist_ok=True)
+        shutil.copy2(temp_file, os.path.join(update_dir, file_name))
+        print('Update file successfully downloaded. Reboot to continue with update.')
+        return True
 
 
 if __name__ == '__main__':
@@ -126,7 +136,12 @@ if __name__ == '__main__':
     else:
         releases_json = 'https://releases.libreelec.tv/releases.json'
 
-    client_update = update_lib.UpdateSystem(json_url=releases_json, json_data=None, nightly=args.nightly, verbose=args.verbose)
+    client_update = update_lib.UpdateSystem(
+        json_url=releases_json,
+        json_data=None,
+        nightly=args.nightly,
+        verbose=args.verbose
+    )
 
     if args.bugfix:
         client_update.check_for_bugfix()
@@ -138,6 +153,7 @@ if __name__ == '__main__':
         client_update.check_for_bugfix()
         if not client_update.update_available:
             client_update.check_for_major()
+
     if args.verbose:
         print(f'{client_update.update_available=}\n{client_update.update_major=}\n{client_update.update_url=}')
 
@@ -148,7 +164,12 @@ if __name__ == '__main__':
         else:
             if args.update:
                 print(f'Downloading: {client_update.update_url}')
-                fetch_update_file(url=client_update.update_url, sha256sum=client_update.candidate['sha256'], file_name=client_update.candidate['filename'], verbose=args.verbose)
+                success = fetch_update_file(
+                    url=client_update.update_url,
+                    sha256sum=client_update.candidate['sha256'],
+                    file_name=client_update.candidate['filename'],
+                    verbose=args.verbose
+                )
             else:
                 print('System update found. Run command again with --update to apply.')
     else:
