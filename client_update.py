@@ -41,7 +41,7 @@ def import_from_file(module_name, file_path):
 update_lib = import_from_file(module_name='update_lib', file_path='/usr/lib/libreelec/update_lib.py')
 
 
-def fetch_update_file(url, sha256sum, file_name, update_dir='/storage/.update'):
+def fetch_update_file(url, sha256sum, file_name, update_dir='/storage/.update', verbose=args.verbose):
     '''Download update_url to a temporary directory. Copy to update directory when finished.'''
     def get_sha256_hash(file_path):
         '''Calculate sha256 sum of file_path in 8KiB chunks.'''
@@ -69,7 +69,7 @@ def fetch_update_file(url, sha256sum, file_name, update_dir='/storage/.update'):
             print('Download finished.')
             if os.path.isfile(f'{update_temp_dir}/update.file'):
                 download_sha256sum = get_sha256_hash(f'{update_temp_dir}/update.file')
-                if args.verbose:
+                if verbose:
                     print(f'{sha256sum=}\n{download_sha256sum=}')
                 if sha256sum == download_sha256sum:
                     print(f'Copying {file_name} to {update_dir}')
@@ -144,7 +144,7 @@ if __name__ == '__main__':
         else:
             if args.update:
                 print(f'Downloading: {client_update.update_url}')
-                fetch_update_file(url=client_update.update_url, sha256sum=client_update.candidate['sha256'], file_name=client_update.candidate['filename'])
+                fetch_update_file(url=client_update.update_url, sha256sum=client_update.candidate['sha256'], file_name=client_update.candidate['filename'], verbose=args.verbose)
             else:
                 print('System update found. Run command again with --update to apply.')
     else:
