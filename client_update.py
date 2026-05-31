@@ -43,16 +43,20 @@ update_lib = import_from_file(module_name='update_lib', file_path='/usr/lib/libr
 
 def fetch_update_file(url, sha256sum, file_name, update_dir='/storage/.update', verbose=args.verbose):
     '''Download update_url to a temporary directory. Copy to update directory when finished.'''
+
     def get_sha256_hash(file_path):
-        '''Calculate sha256 sum of file_path in 8KiB chunks.'''
-        with open(file_path, mode='rb') as file:
-            sha256hash = sha256()
+        '''Calculate sha256 sum of file_path.'''
+        h = sha256()
+        buf = bytearray(32768)
+
+        with open(file_path, mode='rb') as f:
             while True:
-                data_block = file.read(8192)
-                if not data_block:
+                block = f.readinto(buf)
+                if not block:
                     break
-                sha256hash.update(data_block)
-        return sha256hash.hexdigest()
+                h.update(memoryview(buf)[:block])
+
+        return h.hexdigest()
 
     download_sha256sum = None
     with tempfile.TemporaryDirectory() as update_temp_dir:
