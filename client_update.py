@@ -83,6 +83,7 @@ def fetch_update_file(url, sha256sum, file_name, update_dir='/storage/.update', 
             print('Download failed: no file created.')
             return False
 
+        print('Verifying checksum...')
         download_checksum = get_sha256_hash(temp_file, buf)
         if verbose:
             print(f'Expected: {sha256sum}\nGot: {download_checksum}')
