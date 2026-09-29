@@ -140,7 +140,11 @@ class UpdateSystem():
         self.candidate['version_minor'] = version[1]
         self.candidate['version_bugfix'] = version[2]
         # set if parts are known and not nightly check
-        self.candidate['canarydate'] = self.candidate['timestamp'] + timedelta(days=canary) if self.candidate['timestamp'] and canary and not self.nightly else None
+        try:
+            canary_days = int(canary)
+        except (TypeError, ValueError):
+            canary_days = None
+        self.candidate['canarydate'] = self.candidate['timestamp'] + timedelta(days=canary_days) if self.candidate['timestamp'] and canary_days is not None and not self.nightly else None
 
 
     def abort_update_check(self, msg='abort_update_check() triggered'):
