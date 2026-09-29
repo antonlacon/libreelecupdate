@@ -88,7 +88,14 @@ class UpdateSystem():
         except Exception:
             self.current['version_major'] = self.current['version_minor'] = 0
         ver = self.current.get('version', '')
-        self.current['version_bugfix'] = int(ver.split('.')[2]) if not ver.startswith(('devel', 'nightly')) else None
+        try:
+            parts = ver.split('.')
+            if len(parts) >= 3 and not ver.startswith(('devel', 'nightly')):
+                self.current['version_bugfix'] = int(parts[2])
+            else:
+                self.current['version_bugfix'] = None
+            except (ValueError, IndexError):
+                self.current['version_bugfix'] = None
         # parse timestamp info
         try:
             if ver.startswith('nightly'):
