@@ -160,6 +160,7 @@ class UpdateSystem():
         self.update_available = False
         self.update_major = False
         self.update_url = None
+        self.abort_check = True
 
 
     def precheck_update(self):
@@ -169,7 +170,6 @@ class UpdateSystem():
             print(f'{self.current["architecture"]=}\n{self.current["distribution"]=}\n{self.current["version"]=}\n{self.current["version_id"]=}')
         if not (self.current['architecture'] and self.current['distribution'] and self.current['version'] and self.current['version_id']):
             self.abort_update_check('ERROR: parse_osrelease failed. Unable to determine running device or version.')
-            self.abort_check = True
             return
 
         # Retrieve json with release data
@@ -177,7 +177,6 @@ class UpdateSystem():
             self.fetch_update_json()
         if not self.update_json:
             self.abort_update_check('ERROR: No JSON release data.')
-            self.abort_check = True
             return
 
 
