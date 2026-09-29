@@ -17,7 +17,7 @@ import os
 import sys
 import urllib.request
 
-# shutil, tempfile, urllib.error and hashlib/sha256 also imoprted when starting file download
+# shutil, tempfile, urllib.error and hashlib/sha256 also imported when starting file download
 
 
 def import_from_file(module_name, file_path):
