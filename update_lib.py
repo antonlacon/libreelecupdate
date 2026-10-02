@@ -186,13 +186,14 @@ class UpdateSystem():
         if self.abort_check:
             return
 
-        # Cache repeated release branch lookup
-        releases_json = self.update_json[release_branch]['project'][self.current['architecture']]['releases']
-
         release_branch = f'{self.current["distribution"]}-{self.current["version_id"]}'
         if release_branch not in self.update_json:
             self.abort_update_check('Running release branch not in json file.')
             return
+
+        # Cache repeated release branch lookup
+        releases_json = self.update_json[release_branch]['project'][self.current['architecture']]['releases']
+
         device_release = UpdateSystem.get_highest_value(releases_json)
         release_canary = self.update_json[release_branch]['canary']
         # Parses highest (most recent) release of device within releases.json file
