@@ -235,14 +235,17 @@ class UpdateSystem():
             self.update_major = False
             return
 
+        release_branch = f'{self.current["distribution"]}-{highest_version_major}.{highest_version_minor}'
+        # determine latest release for device
+        device_release = UpdateSystem.get_highest_value(releases_json)
+
         # Cache repeated release branch lookup
         branch_json = self.update_json[release_branch]
         releases_json = branch_json['project'][self.current['architecture']]['releases']
 
-        release_branch = f'{self.current["distribution"]}-{highest_version_major}.{highest_version_minor}'
-        # determine latest release for device
-        device_release = UpdateSystem.get_highest_value(releases_json)
+        # Get release canary
         release_canary = branch_json['canary']
+
         # Parses highest (most recent) release of device within releases.json file
         self.parse_device_json(releases_json[device_release], release_canary)
 
