@@ -152,6 +152,7 @@ if __name__ == '__main__':
         client_update.check_for_nightly()
     else:
         client_update.check_for_bugfix()
+        #XXX: If two major stables ever release concurrently, a canary on a bugfix will block the next major upgrade.
         if not client_update.update_available:
             client_update.check_for_major()
 
