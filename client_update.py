@@ -105,9 +105,9 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--verbose', default=False,
         help = 'Verbose output', action = 'store_true')
     parser.add_argument('-b', '--bugfix', default=False,
-        help = 'Check for bugfix updates only (ex 12.0.x -> 12.0.y).', action = 'store_true')
+        help = 'Check for bugfix updates only (12.0.x -> 12.0.y).', action = 'store_true')
     parser.add_argument('-m', '--major', default=False,
-        help = 'Check for major/minor updates only (ex 12.x -> 13.x).', action = 'store_true')
+        help = 'Check for major/minor updates only (12.x -> 12.y or 13.x).', action = 'store_true')
     parser.add_argument('-n', '--nightly', default=False,
         help = 'Check for newer nightly test build. Only works if already running a test or development build.', action = 'store_true')
     parser.add_argument('-f', '--force', default=False,
@@ -115,7 +115,7 @@ if __name__ == '__main__':
     parser.add_argument('-j', '--json', default=None,
         help = 'http or file path to an alternative releases.json file.', action = 'store')
     parser.add_argument('-u', '--update', default=False,
-        help = 'Download update file for latest minor bugfix release, if available.', action = 'store_true')
+        help = 'Download the detected update file for install.', action = 'store_true')
     args = parser.parse_args()
 
     # sanity check
